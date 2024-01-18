@@ -24,5 +24,5 @@ export class Account {
 
   @Column({ name: "user_id" })
   @OneToOne(() => User)
-  userId: string;
+  userId: number;
 }

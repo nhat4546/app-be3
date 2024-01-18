@@ -1,5 +1,5 @@
-import { register } from "../controllers/resgiter";
 import express from "express";
+import { register } from "../controllers/register/resgiter.controller";
 
 const registerRouter = express.Router();
 

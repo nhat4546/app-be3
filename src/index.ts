@@ -1,30 +1,36 @@
-import express from "express";
+import bodyParser from "body-parser";
 import cors from "cors";
+import dotenv from "dotenv";
+import express from "express";
 import "reflect-metadata";
 import { dataSource } from "./connection/data-source";
 import registerRouter from "./router/register";
 
-dataSource
-  .initialize()
-  .then(() => {
-    console.log("Data Source has been initialized!");
-  })
-  .catch((err) => {
-    console.error("Error during Data Source initialization:", err);
-  });
+dotenv.config();
 
-const app = express();
-const PORT = process.env.PORT || 3000;
+async function boostrap() {
+  try {
+    const app = express();
+    const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+    app.use(bodyParser.urlencoded({ extended: false }));
+    app.use(bodyParser.json());
 
-app.use(
-  cors({
-    origin: process.env.PUBLIC_URL,
-  })
-);
+    app.use(
+      cors({
+        origin: process.env.PUBLIC_URL,
+      })
+    );
 
-app.use("/api/register", registerRouter);
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+    app.use("/api/register", registerRouter);
+
+    await dataSource.initialize();
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+boostrap();
