@@ -1,7 +1,10 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { AccountEntity } from "../account/account.entity";
+
+import { BaseEntity } from "../base/base.entity";
 
 @Entity()
-export class User {
+export class UserEntity extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -10,4 +13,9 @@ export class User {
 
   @Column({ unique: true })
   email: string;
+
+  @Column({ unique: true, name: "account_id" })
+  @OneToOne(() => AccountEntity)
+  @JoinColumn({ name: "id" })
+  accountId: number;
 }

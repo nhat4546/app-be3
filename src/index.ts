@@ -1,20 +1,19 @@
 import bodyParser from "body-parser";
 import cors from "cors";
-import dotenv from "dotenv";
-import express from "express";
+import "dotenv/config";
+import express, { NextFunction, Request, Response } from "express";
 import "reflect-metadata";
 import { dataSource } from "./connection/data-source";
-import registerRouter from "./router/register";
+import authRouter from "./router/auth.router";
 
-dotenv.config();
-
-async function boostrap() {
+async function bootstrap() {
   try {
     const app = express();
     const PORT = process.env.PORT || 3000;
 
     app.use(bodyParser.urlencoded({ extended: false }));
     app.use(bodyParser.json());
+    app.use(express.json());
 
     app.use(
       cors({
@@ -22,7 +21,11 @@ async function boostrap() {
       })
     );
 
-    app.use("/api/register", registerRouter);
+    app.use("/api/auth", authRouter);
+
+    app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+      res.status(500).json({ error: error.message });
+    });
 
     await dataSource.initialize();
     app.listen(PORT, () => {
@@ -33,4 +36,4 @@ async function boostrap() {
   }
 }
 
-boostrap();
+bootstrap();

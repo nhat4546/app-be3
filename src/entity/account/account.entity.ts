@@ -1,8 +1,8 @@
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { User } from "../user/user.entity";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity } from "../base/base.entity";
 
 @Entity()
-export class Account {
+export class AccountEntity extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -14,15 +14,11 @@ export class Account {
     type: Boolean,
     default: false,
   })
-  isVerify: string;
+  isVerify: boolean;
 
   @Column({ nullable: true })
   token: string;
 
   @Column({ name: "expire_verify", nullable: true })
   expireVerify: Date;
-
-  @Column({ name: "user_id" })
-  @OneToOne(() => User)
-  userId: number;
 }
