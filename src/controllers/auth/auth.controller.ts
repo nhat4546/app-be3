@@ -1,7 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import { dataSource } from "../../connection/data-source";
 
-import { schemaRegister, schemaVerifyRegister } from "./const/auth.req";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+
+import { schemaLogin, schemaRegister, schemaVerifyRegister } from "./dto/auth.req";
 
 import crypto from "crypto";
 import { MoreThan } from "typeorm";
@@ -19,9 +22,9 @@ export class AuthController {
     next: NextFunction
   ) {
     try {
+      await schemaRegister.validateAsync(req.body);
       const email = req.body.email.toLocaleLowerCase();
       const password = req.body.password;
-      await schemaRegister.validateAsync(req.body);
 
       const isExistEmail = await AuthController.userRepository.findOne({
         where: {
@@ -38,7 +41,10 @@ export class AuthController {
       const date = new Date();
       date.setDate(date.getDate() + 1);
       account.expireVerify = date;
-      account.password = password;
+
+      const salt = bcrypt.genSaltSync(10);
+      const hash = bcrypt.hashSync(password, salt);
+      account.password = hash;
       account.token = crypto.randomBytes(32).toString("hex");
       await AuthController.accountRepository.save(account);
 
@@ -54,7 +60,7 @@ export class AuthController {
         message: "REGISTER_ACCOUNT_SUCCESS",
       });
     } catch (errors) {
-      console.log("errors register account", errors);
+      console.log("ERRORS_REGISTER_ACCOUNT", errors);
       next(errors);
     }
   }
@@ -70,21 +76,67 @@ export class AuthController {
       });
 
       if (!account) {
-        throw new Error("TOKEN_NOT_FOUND_OR_EXPIRED");
+        throw new Error("CODE_NOT_FOUND_OR_EXPIRED");
       }
 
-      await AuthController.accountRepository.update(account, {
-        isVerify: true,
-        token: "",
-      });
+      account.isVerify = true;
+      account.token = "";
+      await AuthController.accountRepository.save(account);
 
       res.status(200).json({
         status: 200,
         message: "VERIFY_REGISTER_SUCCESS",
       });
     } catch (errors) {
-      console.log("errors verify account", errors);
+      console.log("ERRORS_VERIFY_ACCOUNT", errors);
       next(errors);
+    }
+  }
+
+  async login(
+    req: Request<{}, {}, { email: string; password: string }>,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      await schemaLogin.validateAsync(req.body);
+
+      const email = req.body.email.toLowerCase();
+      const password = req.body.password;
+
+      const user = await AuthController.userRepository.findOneBy({ email });
+      if (!user) {
+        throw new Error("EMAIL_OR_PASSWORD_INCORRECT");
+      }
+
+      const account = await AuthController.accountRepository.findOneBy({
+        id: user.id,
+      });
+      if (!account) {
+        throw new Error("EMAIL_OR_PASSWORD_INCORRECT");
+      }
+
+      const isMatch = bcrypt.compareSync(password, account.password);
+      if (!isMatch) {
+        throw new Error("EMAIL_OR_PASSWORD_INCORRECT");
+      }
+
+      res.status(200).json({
+        status: 200,
+        message: "VERIFY_REGISTER_SUCCESS",
+        data: {
+          access_token: jwt.sign(
+            {
+              id: account.id,
+              email: user.email,
+            },
+            process.env.JWT_SECRET || "",
+            { expiresIn: 10000 }
+          ),
+        },
+      });
+    } catch (error) {
+      next(error);
     }
   }
 }

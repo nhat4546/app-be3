@@ -3,7 +3,7 @@ import { AccountEntity } from "../account/account.entity";
 
 import { BaseEntity } from "../base/base.entity";
 
-@Entity()
+@Entity({ name: "user" })
 export class UserEntity extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
