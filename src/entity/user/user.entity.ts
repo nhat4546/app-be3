@@ -16,6 +16,6 @@ export class UserEntity extends BaseEntity {
 
   @Column({ unique: true, name: "account_id" })
   @OneToOne(() => AccountEntity)
-  @JoinColumn({ name: "id" })
+  @JoinColumn()
   accountId: number;
 }

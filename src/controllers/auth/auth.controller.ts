@@ -1,21 +1,38 @@
-import { NextFunction, Request, Response } from "express";
-import { dataSource } from "../../connection/data-source";
-
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-
-import { schemaLogin, schemaRegister, schemaVerifyRegister } from "./dto/auth.req";
-
 import crypto from "crypto";
+import { NextFunction, Request, Response } from "express";
 import { MoreThan } from "typeorm";
-import { MailService } from "../../services/sendmail/sendmail.service";
+
+import { dataSource } from "../../connection/data-source";
 import { AccountEntity } from "../../entity/account/account.entity";
 import { UserEntity } from "../../entity/user/user.entity";
+import { MailService } from "../../services/sendmail/sendmail.service";
+import { generateToken } from "../../utils/common";
+import { schemaLogin, schemaRegister, schemaVerifyRegister } from "./dto/auth.req";
 
 export class AuthController {
   static accountRepository = dataSource.getRepository(AccountEntity);
   static userRepository = dataSource.getRepository(UserEntity);
   static mailService = new MailService();
+  static handleResponseLogin(payload: { id: number; email: string }) {
+    const access_time = process.env.JWT_ACCESS_TOKEN_EXPIRE_TIME || "";
+    const refresh_time = process.env.JWT_REFRESH_TOKEN_EXPIRE_TIME || "";
+    const accessToken = generateToken(
+      payload,
+      process.env.JWT_ACCESS_TOKEN || "",
+      process.env.JWT_ACCESS_TOKEN_EXPIRE_TIME || ""
+    );
+    const refreshToken = generateToken(
+      payload,
+      process.env.JWT_REFRESH_TOKEN || "",
+      process.env.JWT_REFRESH_TOKEN_EXPIRE_TIME || ""
+    );
+    const time = new Date();
+    const expiredAccess = new Date(+time.getTime() + +access_time);
+    const expiredRefresh = new Date(+time.getTime() + +refresh_time);
+    return { accessToken, refreshToken, expiredAccess, expiredRefresh };
+  }
+
   async register(
     req: Request<{}, {}, { email: string; password: string }>,
     res: Response,
@@ -121,21 +138,18 @@ export class AuthController {
         throw new Error("EMAIL_OR_PASSWORD_INCORRECT");
       }
 
+      const data = AuthController.handleResponseLogin({
+        id: account.id,
+        email: user.email,
+      });
+
       res.status(200).json({
         status: 200,
-        message: "VERIFY_REGISTER_SUCCESS",
-        data: {
-          access_token: jwt.sign(
-            {
-              id: account.id,
-              email: user.email,
-            },
-            process.env.JWT_SECRET || "",
-            { expiresIn: 10000 }
-          ),
-        },
+        message: "LOGIN_SUCCESS",
+        data,
       });
     } catch (error) {
+      console.log("LOGIN_FAIL", error);
       next(error);
     }
   }
