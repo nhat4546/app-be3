@@ -8,9 +8,11 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   }
   try {
     const payload: any = verifyToken(token, process.env.JWT_ACCESS_TOKEN || "");
+    delete payload?.iat;
     req.account = payload;
     next();
   } catch (error: any) {
+    console.log("AUTH_MIDDLEWARE_ERROR", error);
     if (error.message === "jwt expired") {
       throw new Error("TOKEN_EXPIRED");
     }

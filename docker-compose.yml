@@ -15,14 +15,14 @@ services:
     networks:
       - base_net
 
-  adminer:
-    image: adminer
-    ports:
-      - 8080:8080
-    depends_on:
-      - mysqldb
-    networks:
-      - base_net
+  # adminer:
+  #   image: adminer
+  #   ports:
+  #     - 8080:8080
+  #   depends_on:
+  #     - mysqldb
+  #   networks:
+  #     - base_net
 
 #  redis:
 #    image: redis:6-alpine

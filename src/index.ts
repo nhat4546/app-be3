@@ -1,11 +1,12 @@
 import bodyParser from "body-parser";
 import cors from "cors";
-import "dotenv/config";
+import * as dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
 import "reflect-metadata";
 import { dataSource } from "./connection/data-source";
 import accountRouter from "./router/account.router";
 import authRouter from "./router/auth.router";
+dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
 declare global {
   namespace Express {
@@ -13,6 +14,7 @@ declare global {
       account: {
         id: number;
         email: string;
+        avatarUrl: string;
       };
     }
   }
@@ -33,6 +35,7 @@ async function bootstrap() {
       })
     );
 
+    app.use("/images", express.static("images"));
     app.use("/api/auth", authRouter);
     app.use("/api/account", accountRouter);
 

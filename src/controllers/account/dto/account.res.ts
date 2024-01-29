@@ -4,4 +4,5 @@ export class AccountRes {
   @Expose() id: number;
   @Expose() email: string;
   @Expose() user_name: string;
+  @Expose() avatarUrl: string;
 }

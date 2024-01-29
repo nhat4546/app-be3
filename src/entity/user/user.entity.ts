@@ -18,4 +18,7 @@ export class UserEntity extends BaseEntity {
   @OneToOne(() => AccountEntity)
   @JoinColumn()
   accountId: number;
+
+  @Column({ nullable: true, name: "avatar_url" })
+  avatarUrl: string;
 }
