@@ -1,12 +1,13 @@
 import bodyParser from "body-parser";
 import cors from "cors";
-import * as dotenv from "dotenv";
+import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
 import "reflect-metadata";
+import swaggerJSDoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
 import { dataSource } from "./connection/data-source";
 import accountRouter from "./router/account.router";
 import authRouter from "./router/auth.router";
-dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
 declare global {
   namespace Express {
@@ -19,6 +20,36 @@ declare global {
     }
   }
 }
+
+const swaggerDefinition = {
+  openapi: "3.0.0",
+  info: {
+    title: "Express API for JSONPlaceholder",
+    version: "1.0.0",
+    description:
+      "This is a REST API application made with Express. It retrieves data from JSONPlaceholder.",
+    license: {
+      name: "Licensed Under MIT",
+      url: "https://spdx.org/licenses/MIT.html",
+    },
+    contact: {
+      name: "JSONPlaceholder",
+      url: "https://jsonplaceholder.typicode.com",
+    },
+  },
+  servers: [
+    {
+      url: `http://localhost:${process.env.PORT}`,
+      description: "Development server",
+    },
+  ],
+};
+
+const options = {
+  swaggerDefinition,
+  apis: ["./router/*.ts"],
+};
+const swaggerSpec = swaggerJSDoc(options);
 
 async function bootstrap() {
   try {
@@ -35,6 +66,7 @@ async function bootstrap() {
       })
     );
 
+    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
     app.use("/images", express.static("images"));
     app.use("/api/auth", authRouter);
     app.use("/api/account", accountRouter);
